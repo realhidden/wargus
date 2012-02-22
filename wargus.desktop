@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Wargus - Warcraft II
+Comment=Warcraft II data game set for the Stratagus engine
+Exec=/usr/games/wargus
+Icon=wargus
+Terminal=false
+Type=Application
+Categories=Game;StrategyGame;
+StartupNotify=false

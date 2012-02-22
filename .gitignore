@@ -1,0 +1,11 @@
+debian/*
+obj-*
+.bzr/
+.byrignore
+.bzr-builddeb/*
+doc/*
+CMakeCache.txt
+CMakeFiles/*
+*.cmake
+Makefile
+.bzrignore
