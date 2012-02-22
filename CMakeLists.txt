@@ -67,6 +67,11 @@ if(WIN32)
 		${wartool_SRCS}
 		rip_music_win32.c
 	)
+elseif(APPLE)
+        set(wartool_SRCS
+                ${wartool_SRCS}
+                rip_music_mac.c
+        )
 else()
 	set(wartool_SRCS
 		${wartool_SRCS}

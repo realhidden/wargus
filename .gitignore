@@ -9,3 +9,7 @@ CMakeFiles/*
 *.cmake
 Makefile
 .bzrignore
+pudconvert
+wargus
+wartool
+data/*
