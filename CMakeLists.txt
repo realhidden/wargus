@@ -33,8 +33,8 @@ set(WARGUS_VERSION 2.2.6)
 # Wargus sources
 
 set(pudconvert_SRCS
-	pud.c
-	pudconvert.c
+	pud.cpp
+	pudconvert.cpp
 )
 
 set(pudconvert_HDRS
@@ -43,8 +43,8 @@ set(pudconvert_HDRS
 )
 
 set(wartool_SRCS
-	pud.c
-	wartool.c
+	pud.cpp
+	wartool.cpp
 	xmi2mid.cpp
 )
 
@@ -55,7 +55,7 @@ set(wartool_HDRS
 )
 
 set(wargus_SRCS
-	wargus.c
+	wargus.cpp
 )
 
 if(WIN32)
@@ -65,7 +65,7 @@ if(WIN32)
 	)
 	set(wartool_SRCS
 		${wartool_SRCS}
-		rip_music_win32.c
+		rip_music_win32.cpp
 	)
 elseif(APPLE)
         set(wartool_SRCS
@@ -191,7 +191,7 @@ if(MAEMO)
 	target_link_libraries(warextract ${warextract_LIBS})
 endif()
 
-add_executable(wargus WIN32 ${wargus_SRCS} ${wargus_HDRS})
+add_executable(wargus ${wargus_SRCS} ${wargus_HDRS})
 target_link_libraries(wargus ${wargus_LIBS})
 
 add_executable(wartool ${wartool_SRCS} ${wartool_HDRS})

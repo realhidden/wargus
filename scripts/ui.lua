@@ -32,25 +32,27 @@ Load("scripts/widgets.lua")
 --
 --  Define Decorations.
 --
+if (CanAccessFile("ui/health2.png")) then
+	DefineSprites({Name = "sprite-health", File = "ui/health2.png", Offset = {0, -4}, Size = {31, 4}})
 
-DefineSprites({Name = "sprite-mana", File = "ui/mana2.png",
-				Offset = {0, -1}, Size = {31, 4}})
-DefineSprites({Name = "sprite-health", File = "ui/health2.png",
-				Offset = {0, -4}, Size = {31, 4}})
-DefineSprites({Name = "sprite-shadow", File = "missiles/unit_shadow.png",
-				Offset = {3, 42}, Size = {32, 32}})
-DefineSprites({Name = "sprite-spell", File = "ui/bloodlust,haste,slow,invisible,shield.png",
-				Offset = {1, 1}, Size = {16, 16}})
-
-DefineDecorations({Index = "HitPoints", HideNeutral = true, CenterX = true, ShowOpponent=true,
+	DefineDecorations({Index = "HitPoints", HideNeutral = true, CenterX = true, ShowOpponent=true,
 		OffsetPercent = {50, 100}, Method = {"sprite", {"sprite-health"}}})
-DefineDecorations({Index = "Mana", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "Transport", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "Research", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "Training", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "UpgradeTo", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "GiveResource", HideNeutral = false, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
-DefineDecorations({Index = "CarryResource", HideNeutral = false, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+end
+
+if (CanAccessFile("ui/mana2.png")) then
+	DefineSprites({Name = "sprite-mana", File = "ui/mana2.png", Offset = {0, -1}, Size = {31, 4}})
+
+	DefineDecorations({Index = "Mana", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "Transport", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "Research", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "Training", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "UpgradeTo", HideNeutral = true, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "GiveResource", HideNeutral = false, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+	DefineDecorations({Index = "CarryResource", HideNeutral = false, CenterX = true,OffsetPercent = {50, 100},Method = {"sprite", {"sprite-mana"}}})
+end
+DefineSprites({Name = "sprite-shadow", File = "missiles/unit_shadow.png", Offset = {3, 42}, Size = {32, 32}})
+DefineSprites({Name = "sprite-spell", File = "ui/bloodlust,haste,slow,invisible,shield.png", Offset = {1, 1}, Size = {16, 16}})
+
 
 DefineDecorations({Index = "Bloodlust", ShowOpponent = true,
   Offset = {0, 0}, Method = {"static-sprite", {"sprite-spell", 0}}})
@@ -181,7 +183,7 @@ DefinePanelContents(
   Ident = "panel-attack-unit-contents",
   Pos = {info_panel_x, info_panel_y},
   DefaultFont = "game",
-  Condition = {ShowOpponent = false, HideNeutral = true, Building = "false", Build = "false"},
+  Condition = {ShowOpponent = true, HideNeutral = true, Building = "false", Build = "false"},
   Contents = {
 -- Unit caracteristics
 	{ Pos = {114, 41},
@@ -222,12 +224,14 @@ DefineCursor({
   File = "ui/cursors/small_green_cross.png",
   HotSpot = { 8,  8},
   Size = {18, 18}})
-DefineCursor({
-  Name = "cursor-scroll",
-  Race = "any",
-  File = "ui/cursors/cross.png",
-  HotSpot = {15, 15},
-  Size = {32, 32}})
+if (CanAccessFile("ui/cursors/cross.png")) then
+  DefineCursor({
+	Name = "cursor-scroll",
+	Race = "any",
+	File = "ui/cursors/cross.png",
+	HotSpot = {15, 15},
+	Size = {32, 32}})
+end
 DefineCursor({
   Name = "cursor-arrow-e",
   Race = "any",
