@@ -1850,7 +1850,7 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 		return 1;
 	}
 
-	if (setjmp(png_ptr->jmpbuf)) {
+	if (setjmp(png_jmpbuf(png_ptr))) {
 		// FIXME: must free buffers!!
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(fp);
@@ -1858,9 +1858,7 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 	}
 	png_init_io(png_ptr, fp);
 
-	// zlib parameters
-	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-
+/*
 	// prepare the file information
 	info_ptr->width = w;
 	info_ptr->height = h;
@@ -1870,6 +1868,15 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 	info_ptr->valid |= PNG_INFO_PLTE;
 	info_ptr->palette = (png_colorp)pal;
 	info_ptr->num_palette = 256;
+	*/
+
+	png_set_IHDR(png_ptr,info_ptr,w,h,8,PNG_COLOR_TYPE_PALETTE,
+		PNG_INTERLACE_NONE,PNG_COMPRESSION_TYPE_DEFAULT,PNG_FILTER_TYPE_DEFAULT);
+	
+	png_set_PLTE(png_ptr,info_ptr,(png_colorp)pal,256);
+	
+	// zlib parameters
+	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 
 	if (transparent) {
 		unsigned char* p;
@@ -1892,7 +1899,6 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 
 	// write the file header information
 	png_write_info(png_ptr, info_ptr);
-
 	// set transformation
 
 	// prepare image
@@ -3402,7 +3408,7 @@ int CopyFile(char *from, char *to, int overwrite)
 	if (!overwrite && !stat(to, &st))
 		return 0;
 
-	cmd = calloc(strlen("cp \"") + strlen(from) + strlen("\" \"") + strlen(to) + strlen("\""), 1);
+	cmd = (char*)calloc(strlen("cp \"") + strlen(from) + strlen("\" \"") + strlen(to) + strlen("\""), 1);
 	if (!cmd) {
 		fprintf(stderr, "Memory error\n");
 		exit(-1);
