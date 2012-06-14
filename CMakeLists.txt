@@ -75,7 +75,7 @@ elseif(APPLE)
 else()
 	set(wartool_SRCS
 		${wartool_SRCS}
-		rip_music_unix.c
+		rip_music_unix.cpp
 	)
 endif()
 
@@ -145,6 +145,13 @@ endif()
 option(ENABLE_UPX "Compress Stratagus executable binary with UPX packer" OFF)
 option(ENABLE_STRIP "Strip all symbols from executables" OFF)
 
+# Install paths
+set(BINDIR "bin" CACHE PATH "Where to install binaries")
+set(SHAREDIR "share/games/stratagus/wargus" CACHE PATH "Where to install data files")
+set(DATAROOTDIR "${CMAKE_INSTALL_PREFIX}/share" CACHE PATH "Sets the root of data directories to a non-default location")
+set(ICONDIR "${DATAROOTDIR}/pixmaps" CACHE PATH "Sets the icon directory for desktop entry to a non-default location.")
+set(DESKTOPDIR "${DATAROOTDIR}/applications" CACHE PATH "Sets the desktop file directory for desktop entry to a non-default location.")
+
 # Wargus definitions
 
 add_definitions(${PNG_DEFINITIONS})
@@ -160,8 +167,13 @@ if(NOT WIN32)
 endif()
 
 if (NOT WIN32 AND NOT MAEMO)
-	add_definitions(-DDATA_PATH="${CMAKE_INSTALL_PREFIX}/share/games/stratagus/wargus")
-	add_definitions(-DSCRIPTS_PATH="${CMAKE_INSTALL_PREFIX}/share/games/stratagus/wargus")
+	if(NOT IS_ABSOLUTE "${SHAREDIR}")
+		set(DATA_PATH "${CMAKE_INSTALL_PREFIX}/${SHAREDIR}")
+	else()
+		set(DATA_PATH "${SHAREDIR}")
+	endif()
+	add_definitions(-DDATA_PATH="${DATA_PATH}")
+	add_definitions(-DSCRIPTS_PATH="${DATA_PATH}")
 	add_definitions(-DSTRATAGUS_BIN="${STRATAGUS}")
 endif()
 
@@ -176,9 +188,7 @@ if(MAEMO)
 endif()
 
 if(ENABLE_STRIP)
-	set(CMAKE_EXE_LINKER_FLAGS "-s")
-else()
-	set(CMAKE_EXE_LINKER_FLAGS "")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
 endif()
 
 # Compile Wargus
@@ -230,7 +240,7 @@ if(WIN32 AND ENABLE_NSIS AND MAKENSIS_FOUND)
 	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/wargus.ico DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 	add_custom_command(OUTPUT Wargus-${WARGUS_VERSION}${MAKENSIS_SUFFIX}
 		COMMAND ${MAKENSIS}
-		ARGS -DNO_DOWNLOAD ${MAKENSIS_FLAGS} -DCMAKE_CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DCMAKE_CURRENT_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" ${CMAKE_CURRENT_SOURCE_DIR}/wargus.nsi
+		ARGS ${MAKENSIS_FLAGS} -DCMAKE_CURRENT_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DCMAKE_CURRENT_BINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" ${CMAKE_CURRENT_SOURCE_DIR}/wargus.nsi
 		DEPENDS wargus.nsi pudconvert wargus wartool COPYING COPYING-3rd wargus.ico
 		COMMENT "Generating Wargus Windows NSIS Installer" VERBATIM
 	)
@@ -239,16 +249,16 @@ endif()
 
 ########### install files ###############
 
-install(TARGETS wargus DESTINATION games)
-install(TARGETS pudconvert wartool DESTINATION bin)
-install(FILES wargus.png DESTINATION share/pixmaps)
-install(FILES wargus.desktop DESTINATION share/applications)
+install(TARGETS wargus DESTINATION ${BINDIR})
+install(TARGETS pudconvert wartool DESTINATION ${BINDIR})
+install(FILES wargus.png DESTINATION ${ICONDIR})
+install(FILES wargus.desktop DESTINATION ${DESKTOPDIR})
 
-install(DIRECTORY campaigns maps scripts DESTINATION share/games/stratagus/wargus)
-install(FILES contrib/red_cross.png DESTINATION share/games/stratagus/wargus/graphics/missiles)
-install(FILES contrib/cross.png DESTINATION share/games/stratagus/wargus/graphics/ui/cursors)
-install(FILES contrib/food.png contrib/health.png contrib/health2.png contrib/mana.png contrib/mana2.png contrib/ore,stone,coal.png contrib/score.png DESTINATION share/games/stratagus/wargus/graphics/ui)
+install(DIRECTORY campaigns maps scripts DESTINATION ${SHAREDIR})
+install(FILES contrib/red_cross.png DESTINATION ${SHAREDIR}/graphics/missiles)
+install(FILES contrib/cross.png DESTINATION ${SHAREDIR}/graphics/ui/cursors)
+install(FILES contrib/food.png contrib/health.png contrib/health2.png contrib/mana.png contrib/mana2.png contrib/ore,stone,coal.png contrib/score.png DESTINATION ${SHAREDIR}/graphics/ui)
 
 if(MAEMO)
-	install(TARGETS warextract DESTINATION bin)
+	install(TARGETS warextract DESTINATION ${BINDIR})
 endif()

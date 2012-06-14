@@ -53,6 +53,7 @@ const char NameLine[] = "wartool V" VERSION " for Stratagus, (c) 1998-2011 by Th
 #include <stdint.h>
 #include <ctype.h>
 #include <png.h>
+#include <zlib.h>
 
 #if defined(_MSC_VER) || defined(WIN32)
 #include <windows.h>
@@ -88,7 +89,7 @@ const char NameLine[] = "wartool V" VERSION " for Stratagus, (c) 1998-2011 by Th
 /**
 **		Destination directory of the graphics
 */
-char* Dir;
+const char* Dir;
 
 /**
 **		Path to the tileset graphics. (default=$DIR/graphics/tilesets)
@@ -148,7 +149,7 @@ char* Dir;
 typedef struct _control_ {
 	int   Type;       /// Entry type
 	int   Version;    /// Only in this version
-	char* File;       /// Save file
+	const char* File;       /// Save file
 	int   Arg1;       /// Extra argument 1
 	int   Arg2;       /// Extra argument 2
 	int   Arg3;       /// Extra argument 3
@@ -1575,7 +1576,7 @@ static Control Todo[] = {
 };
 
 // puds that are in their own file
-static char *OriginalPuds[] = {
+static const char *OriginalPuds[] = {
 	"../alamo.pud",
 	"../channel.pud",
 	"../death.pud",
@@ -1587,7 +1588,7 @@ static char *OriginalPuds[] = {
 	""
 };
 
-static char *ExpansionPuds[] = {
+static const char *ExpansionPuds[] = {
 	"../puds/multi/3vs3.pud",
 	"../puds/multi/3vs5.pud",
 	"../puds/multi/arena.pud",
@@ -1668,7 +1669,7 @@ typedef struct _grouped_graphic_ {
 	char Name[100];      // name
 } GroupedGraphic;
 
-static GroupedGraphic GroupedGraphicsList[][60] = {
+static const GroupedGraphic GroupedGraphicsList[][60] = {
 	// group 0 (widgets)
 	{
 		// 0 and 1 are the same
@@ -1858,8 +1859,12 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 	}
 	png_init_io(png_ptr, fp);
 
-/*
 	// prepare the file information
+#if PNG_LIBPNG_VER >= 10504
+	png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_PALETTE, 0,
+				PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	png_set_PLTE(png_ptr, info_ptr, (png_colorp)pal, 256);
+#else
 	info_ptr->width = w;
 	info_ptr->height = h;
 	info_ptr->bit_depth = 8;
@@ -1868,15 +1873,7 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 	info_ptr->valid |= PNG_INFO_PLTE;
 	info_ptr->palette = (png_colorp)pal;
 	info_ptr->num_palette = 256;
-	*/
-
-	png_set_IHDR(png_ptr,info_ptr,w,h,8,PNG_COLOR_TYPE_PALETTE,
-		PNG_INTERLACE_NONE,PNG_COMPRESSION_TYPE_DEFAULT,PNG_FILTER_TYPE_DEFAULT);
-	
-	png_set_PLTE(png_ptr,info_ptr,(png_colorp)pal,256);
-	
-	// zlib parameters
-	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+#endif
 
 	if (transparent) {
 		unsigned char* p;
@@ -2137,7 +2134,7 @@ unsigned char* ConvertPalette(unsigned char* pal)
 /**
 **  Convert rgb to my format.
 */
-int ConvertRgb(char* file, int rgbe)
+int ConvertRgb(const char* file, int rgbe)
 {
 	unsigned char* rgbp;
 	char buf[1024];
@@ -2386,7 +2383,7 @@ unsigned char* ConvertTile(unsigned char* mini, const unsigned char* mega, int m
 /**
 **  Convert a tileset to my format.
 */
-int ConvertTileset(char* file, int pale, int mege, int mine, int mape)
+int ConvertTileset(const char* file, int pale, int mege, int mine, int mape)
 {
 	unsigned char* palp;
 	unsigned char* megp;
@@ -2679,7 +2676,7 @@ unsigned char* ConvertGraphic(int gfx, unsigned char* bp, int *wp, int *hp,
 /**
 **  Convert a graphic to my format.
 */
-int ConvertGfx(char* file, int pale, int gfxe, int gfxe2, int start2)
+int ConvertGfx(const char* file, int pale, int gfxe, int gfxe2, int start2)
 {
 	unsigned char* palp;
 	unsigned char* gfxp;
@@ -2719,7 +2716,7 @@ int ConvertGfx(char* file, int pale, int gfxe, int gfxe2, int start2)
 /**
 **  Convert a uncompressed graphic to my format.
 */
-int ConvertGfu(char* file,int pale,int gfue)
+int ConvertGfu(const char* file,int pale,int gfue)
 {
 	unsigned char* palp;
 	unsigned char* gfup;
@@ -2749,7 +2746,7 @@ int ConvertGfu(char* file,int pale,int gfue)
 /**
 **  Split up and convert uncompressed graphics to seperate PNGs
 */
-int ConvertGroupedGfu(char *path, int pale, int gfue, int glist)
+int ConvertGroupedGfu(const char *path, int pale, int gfue, int glist)
 {
 	unsigned char* palp;
 	unsigned char* gfup;
@@ -2758,7 +2755,7 @@ int ConvertGroupedGfu(char *path, int pale, int gfue, int glist)
 	int h;
 	char buf[1024];
 	int i;
-	GroupedGraphic *gg;
+	const GroupedGraphic *gg;
 
 	palp = ExtractEntry(ArchiveOffsets[pale], NULL);
 	gfup = ExtractEntry(ArchiveOffsets[gfue], NULL);
@@ -2801,7 +2798,7 @@ int ConvertGroupedGfu(char *path, int pale, int gfue, int glist)
 /**
 **  Convert pud to my format.
 */
-void ConvertPud(char* file, int pude)
+void ConvertPud(const char* file, int pude)
 {
 	unsigned char* pudp;
 	char buf[1024];
@@ -2821,7 +2818,7 @@ void ConvertPud(char* file, int pude)
 /**
 **	Convert puds that are in their own file
 */
-void ConvertFilePuds(char **pudlist)
+void ConvertFilePuds(const char **pudlist)
 {
 	char pudname[1024];
 	char base[1024];
@@ -2838,11 +2835,11 @@ void ConvertFilePuds(char **pudlist)
 			int j = 0;
 			strcpy(filename, pudlist[i]);
 			strcpy(origname, pudlist[i]);
-			pudlist[i] = filename;
-			while (pudlist[i][j]) {
-				pudlist[i][j] = toupper(pudlist[i][j]);
+			while (filename[j]) {
+				filename[j] = toupper(filename[j]);
 				++j;
 			}
+			pudlist[i] = filename;
 		}
 		sprintf(pudname, "%s/%s", ArchiveDir, pudlist[i]);
 		if (stat(pudname, &sb)) {
@@ -2993,7 +2990,7 @@ unsigned char* ConvertFnt(unsigned char* start, int *wp, int *hp)
 /**
 **  Convert a font to my format.
 */
-int ConvertFont(char* file, int pale, int fnte)
+int ConvertFont(const char* file, int pale, int fnte)
 {
 	unsigned char* palp;
 	unsigned char* fntp;
@@ -3095,7 +3092,7 @@ void ResizeImage(unsigned char** image, int ow, int oh, int nw, int nh)
 /**
 **  Convert an image to my format.
 */
-int ConvertImage(char* file, int pale, int imge, int nw, int nh)
+int ConvertImage(const char* file, int pale, int imge, int nw, int nh)
 {
 	unsigned char* palp;
 	unsigned char* imgp;
@@ -3191,7 +3188,7 @@ unsigned char* ConvertCur(unsigned char* bp, int* wp, int* hp)
 /**
 **  Convert a cursor to my format.
 */
-int ConvertCursor(char* file, int pale, int cure)
+int ConvertCursor(const char* file, int pale, int cure)
 {
 	unsigned char* palp;
 	unsigned char* curp;
@@ -3231,7 +3228,7 @@ int ConvertCursor(char* file, int pale, int cure)
 /**
 **  Extract Wav
 */
-int ConvertWav(char* file, int wave)
+int ConvertWav(const char* file, int wave)
 {
 	unsigned char* wavp;
 	char buf[1024];
@@ -3267,7 +3264,7 @@ int ConvertWav(char* file, int wave)
 **  Convert XMI Midi sound to OGG
 */
 
-int ConvertXmi(char* file, int xmi)
+int ConvertXmi(const char* file, int xmi)
 {
 	unsigned char* xmip;
 	unsigned char* midp;
@@ -3516,7 +3513,7 @@ int ConvertMusic(void)
 /**
 **  Convert SMK video to OGV
 */
-int ConvertVideo(char* file, int video)
+int ConvertVideo(const char* file, int video)
 {
 	unsigned char* vidp;
 	char buf[1024];
@@ -3601,7 +3598,7 @@ unsigned char *ConvertString(unsigned char *buf, size_t len)
 /**
 **  Convert text to my format.
 */
-int ConvertText(char* file, int txte, int ofs)
+int ConvertText(const char* file, int txte, int ofs)
 {
 	unsigned char* txtp;
 	char buf[1024];
@@ -4216,7 +4213,7 @@ unsigned char Names[]={
 /**
 **  Convert text to my format.
 */
-int SetupNames(char* file __attribute__((unused)), int txte __attribute__((unused)))
+int SetupNames(const char* file __attribute__((unused)), int txte __attribute__((unused)))
 {
 	unsigned char* txtp;
 	const unsigned short* mp;
@@ -4248,11 +4245,12 @@ int SetupNames(char* file __attribute__((unused)), int txte __attribute__((unuse
 /**
 **  Parse string.
 */
-char* ParseString(char* input)
+char* ParseString(const char* input)
 {
 	static char buf[1024];
+	const char* sp;
+	char* strsp;
 	char* dp;
-	char* sp;
 	char* tp;
 	int i;
 	int f;
@@ -4266,7 +4264,8 @@ char* ParseString(char* input)
 				f = 1;
 				++sp;
 			}
-			i = strtol(sp, &sp, 0);
+			i = strtol(sp, &strsp, 0);
+			sp = strsp;
 			tp = UnitNames[i];
 			if (f) {
 				tp = strchr(tp, ' ') + 1;
@@ -4299,7 +4298,7 @@ char* ParseString(char* input)
 /**
 **  FIXME: docu
 */
-int CampaignsCreate(char* file __attribute__((unused)), int txte, int ofs)
+int CampaignsCreate(const char* file __attribute__((unused)), int txte, int ofs)
 {
 	unsigned char* objectives;
 	char buf[1024];
@@ -4647,8 +4646,8 @@ int main(int argc, char** argv)
 	for (u = 0; u < sizeof(Todo) / sizeof(*Todo); ++u) {
 		if (CDType & CD_MAC) {
 			strcpy(filename, Todo[u].File);
+			ConvertToMac(filename);
 			Todo[u].File = filename;
-			ConvertToMac(Todo[u].File);
 		}
 		// Should only be on the expansion cd
 #ifdef DEBUG
@@ -4668,11 +4667,11 @@ int main(int argc, char** argv)
 				if (CDType & CD_UPPER) {
 					int i = 0;
 					strcpy(filename, Todo[u].File);
-					Todo[u].File = filename;
-					while (Todo[u].File[i]) {
-						Todo[u].File[i] = toupper(Todo[u].File[i]);
+					while (filename[i]) {
+						filename[i] = toupper(filename[i]);
 						++i;
 					}
+					Todo[u].File = filename;
 				}
 				sprintf(buf, "%s/%s", ArchiveDir, Todo[u].File);
 				printf("Archive \"%s\"\n", buf);
