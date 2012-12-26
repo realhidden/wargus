@@ -10,7 +10,7 @@
 //
 /**@name wartool.c - Extract files from war archives. */
 //
-//      (c) Copyright 1999-2011 by Lutz Sammer, Nehal Mistry, Jimmy Salmon
+//      (c) Copyright 1999-2012 by Lutz Sammer, Nehal Mistry, Jimmy Salmon
 //                              and Pali Rohár
 //
 //      This program is free software; you can redistribute it and/or modify
@@ -36,7 +36,7 @@
 
 #define VERSION "1.3" // Version of extractor wartool
 
-const char NameLine[] = "wartool V" VERSION " for Stratagus, (c) 1998-2011 by The Stratagus Project.\n"\
+const char NameLine[] = "wartool V" VERSION " for Stratagus, (c) 1998-2012 by The Stratagus Project.\n"\
 "  Written by Lutz Sammer, Nehal Mistry, and Jimmy Salmon and Pali Rohar.\n"\
 "  https://launchpad.net/wargus";
 
@@ -170,6 +170,11 @@ static unsigned char* ArchiveBuffer;
 **  Offsets for each entry into original archive buffer.
 */
 static unsigned char** ArchiveOffsets;
+
+/**
+**  Fake empty entry
+*/
+static unsigned int EmptyEntry[] = { 1, 1, 1 };
 
 /**
 **  Possible entry types of archive file.
@@ -1859,6 +1864,9 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 	}
 	png_init_io(png_ptr, fp);
 
+	// zlib parameters
+	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
+
 	// prepare the file information
 #if PNG_LIBPNG_VER >= 10504
 	png_set_IHDR(png_ptr, info_ptr, w, h, 8, PNG_COLOR_TYPE_PALETTE, 0,
@@ -1896,6 +1904,7 @@ int SavePNG(const char* name, unsigned char* image, int x, int y, int w,
 
 	// write the file header information
 	png_write_info(png_ptr, info_ptr);
+
 	// set transformation
 
 	// prepare image
@@ -1996,6 +2005,22 @@ int OpenArchive(const char* file, int type)
 	}
 	for (i = 0; i < entries; ++i) {
 		op[i] = buf + FetchLE32(cp);
+		// check if entry size is not bigger then archive size
+		if (op[i] >= buf + stat_buf.st_size - 4) {
+			op[i] = (unsigned char *)&EmptyEntry;
+			printf("Ignore entry %d in archive (invalid offset)\n", i);
+			fflush(stdout);
+		} else {
+			unsigned char* dp = op[i];
+			size_t length = FetchLE32(dp);
+			int flags = length >> 24;
+			length &= 0x00FFFFFF;
+			if (flags == 0x00 && op[i] + length >= buf + stat_buf.st_size) {
+				op[i] = (unsigned char *)&EmptyEntry;
+				printf("Ignore entry %d in archive (invalid uncompressed length)\n", i);
+				fflush(stdout);
+			}
+		}
 //		printf("Offset\t%d\n", op[i]);
 	}
 	op[i] = buf + stat_buf.st_size;
@@ -3405,7 +3430,7 @@ int CopyFile(char *from, char *to, int overwrite)
 	if (!overwrite && !stat(to, &st))
 		return 0;
 
-	cmd = (char*)calloc(strlen("cp \"") + strlen(from) + strlen("\" \"") + strlen(to) + strlen("\""), 1);
+	cmd = (char *)calloc(strlen("cp \"") + strlen(from) + strlen("\" \"") + strlen(to) + strlen("\"") + 1, 1);
 	if (!cmd) {
 		fprintf(stderr, "Memory error\n");
 		exit(-1);

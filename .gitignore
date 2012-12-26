@@ -14,3 +14,5 @@ wargus
 wartool
 data/*
 build.sh
+
+install_manifest.txt

@@ -9,7 +9,7 @@
 #         Stratagus - A free fantasy real time strategy game engine
 #
 #    CMakeLists.txt
-#    Copyright (C) 2011  Pali Rohár <pali.rohar@gmail.com>
+#    Copyright (C) 2011-2012  Pali Rohár <pali.rohar@gmail.com>
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
 
 project(wargus)
 cmake_minimum_required(VERSION 2.6)
-set(WARGUS_VERSION 2.2.6)
+set(WARGUS_VERSION 2.2.7)
 
 # Wargus sources
 
@@ -105,7 +105,8 @@ endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
-find_package(Stratagus REQUIRED)
+#find_package(Stratagus REQUIRED)
+set(STRATAGUS_INCLUDE_DIR "../stratagus/gameheaders/")
 find_package(PNG REQUIRED)
 find_package(ZLIB REQUIRED)
 
@@ -146,11 +147,18 @@ option(ENABLE_UPX "Compress Stratagus executable binary with UPX packer" OFF)
 option(ENABLE_STRIP "Strip all symbols from executables" OFF)
 
 # Install paths
-set(BINDIR "bin" CACHE PATH "Where to install binaries")
+set(BINDIR "bin" CACHE PATH "Where to install user binaries")
+set(GAMEDIR "games" CACHE PATH "Where to install games binaries")
 set(SHAREDIR "share/games/stratagus/wargus" CACHE PATH "Where to install data files")
 set(DATAROOTDIR "${CMAKE_INSTALL_PREFIX}/share" CACHE PATH "Sets the root of data directories to a non-default location")
 set(ICONDIR "${DATAROOTDIR}/pixmaps" CACHE PATH "Sets the icon directory for desktop entry to a non-default location.")
 set(DESKTOPDIR "${DATAROOTDIR}/applications" CACHE PATH "Sets the desktop file directory for desktop entry to a non-default location.")
+
+if(NOT IS_ABSOLUTE "${GAMEDIR}")
+	set(GAMEDIRABS "${CMAKE_INSTALL_PREFIX}/${GAMEDIR}")
+else()
+	set(GAMEDIRABS "${GAMEDIR}")
+endif()
 
 # Wargus definitions
 
@@ -201,16 +209,16 @@ if(MAEMO)
 	target_link_libraries(warextract ${warextract_LIBS})
 endif()
 
-add_executable(wargus ${wargus_SRCS} ${wargus_HDRS})
+add_executable(wargus WIN32 ${wargus_SRCS} ${wargus_HDRS})
 target_link_libraries(wargus ${wargus_LIBS})
 
 add_executable(wartool ${wartool_SRCS} ${wartool_HDRS})
 target_link_libraries(wartool ${wartool_LIBS})
 
 if(WIN32 AND MINGW AND ENABLE_STATIC)
-	set_target_properties(pudconvert PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc")
-	set_target_properties(wargus PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc")
-	set_target_properties(wartool PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc")
+	set_target_properties(pudconvert PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc -static-libstdc++")
+	set_target_properties(wargus PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc -static-libstdc++")
+	set_target_properties(wartool PROPERTIES LINK_FLAGS "${LINK_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
 ########### next target ###############
@@ -247,12 +255,19 @@ if(WIN32 AND ENABLE_NSIS AND MAKENSIS_FOUND)
 	add_custom_target(nsis ALL DEPENDS Wargus-${WARGUS_VERSION}${MAKENSIS_SUFFIX})
 endif()
 
+########### next target ###############
+
+configure_file (
+	"${PROJECT_SOURCE_DIR}/wargus.desktop.in"
+	"${PROJECT_BINARY_DIR}/wargus.desktop"
+)
+
 ########### install files ###############
 
-install(TARGETS wargus DESTINATION ${BINDIR})
+install(TARGETS wargus DESTINATION ${GAMEDIR})
 install(TARGETS pudconvert wartool DESTINATION ${BINDIR})
 install(FILES wargus.png DESTINATION ${ICONDIR})
-install(FILES wargus.desktop DESTINATION ${DESKTOPDIR})
+install(FILES "${PROJECT_BINARY_DIR}/wargus.desktop" DESTINATION ${DESKTOPDIR})
 
 install(DIRECTORY campaigns maps scripts DESTINATION ${SHAREDIR})
 install(FILES contrib/red_cross.png DESTINATION ${SHAREDIR}/graphics/missiles)
