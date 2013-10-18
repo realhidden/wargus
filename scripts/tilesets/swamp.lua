@@ -38,7 +38,6 @@ DefineTileset("name", "Swamp",
   "slots", { "special", {		-- Can't be in pud
     "top-one-tree", 121, "mid-one-tree", 122, "bot-one-tree", 123,
     "removed-tree", 126,
-    "growing-tree", { -1, -1 },
     "top-one-rock", 155, "mid-one-rock", 156, "bot-one-rock", 157,
     "removed-rock", 161 },
   "solid", { "unused",
@@ -227,6 +226,13 @@ DefineTileset("name", "Swamp",
   })
 
 BuildTilesetTables()
+
+SetColorCycleAll(true)
+ClearAllColorCyclingRange()
+AddColorCyclingRange(5, 9) -- water
+AddColorCyclingRange(38, 47) -- water coast boundry
+AddColorCyclingRange(88, 95) -- building
+AddColorCyclingRange(240, 244) -- icon
 
 wargus.tileset = "swamp"
 Load("scripts/scripts.lua")

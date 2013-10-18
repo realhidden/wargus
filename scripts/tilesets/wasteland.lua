@@ -38,7 +38,6 @@ DefineTileset("name", "Wasteland",
   "slots", { "special", {
     "top-one-tree", 121, "mid-one-tree", 122, "bot-one-tree", 123,
     "removed-tree", 126,
-    "growing-tree", { -1, -1, },
     "top-one-rock", 158, "mid-one-rock", 159, "bot-one-rock", 160,
     "removed-rock", 163, },
   "solid", { "unused",
@@ -227,6 +226,12 @@ DefineTileset("name", "Wasteland",
   })
 
 BuildTilesetTables()
+
+SetColorCycleAll(true)
+ClearAllColorCyclingRange()
+AddColorCyclingRange(38, 47) -- water
+AddColorCyclingRange(64, 70) -- water coast boundry
+AddColorCyclingRange(240, 244) -- icon
 
 wargus.tileset = "wasteland"
 Load("scripts/scripts.lua")

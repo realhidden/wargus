@@ -195,14 +195,6 @@ DefinePlayerColors({
   "yellow", {{252, 252, 72}, {228, 204, 40}, {204, 160, 16}, {180, 116, 0}},
 })
 
---  If color-cycle-all is off (#f) only the tileset palette is color cycled.
--- Otherwise (#t) all palettes are color cycled.
-SetColorCycleAll(true)
-ClearAllColorCyclingRange()
-AddColorCyclingRange(38, 47) -- water
-AddColorCyclingRange(205, 207) -- building
-AddColorCyclingRange(240, 244) -- icon
-
 -------------------------------------------------------------------------------
 
 --  Edit next to increase the speed, for debugging.
@@ -301,6 +293,7 @@ local defaultPreferences = {
 	MusicEnabled = true,
 	MusicVolume = 128,
 	PlayerName = "Player",
+	ServerIP = "localhost",
 	ShowCommandKey = true,
 	ShowTips = true,
 	StratagusTranslation = "",

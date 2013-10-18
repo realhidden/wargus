@@ -86,6 +86,7 @@ function addPlayersList(menu, numplayers)
     local ready_players = 0
     players_state[1]:setCaption("Creator")
     players_name[1]:setCaption(Hosts[0].PlyName)
+    players_name[1]:adjustSize()
     for i=2,8 do
       if Hosts[i-1].PlyName == "" then
         players_name[i]:setCaption("")
@@ -99,11 +100,12 @@ function addPlayersList(menu, numplayers)
           players_state[i]:setCaption("Preparing")
         end
         players_name[i]:setCaption(Hosts[i-1].PlyName)
+        players_name[i]:adjustSize()
      end
     end
     numplayers_text:setCaption("Open slots : " .. numplayers - 1 - connected_players)
     numplayers_text:adjustSize()
-    return (connected_players > 0 and ready_players == connected_players)
+    return numplayers == 1 or (connected_players > 0 and ready_players == connected_players)
   end
 
   return updatePlayers
@@ -123,11 +125,11 @@ function RunJoiningMapMenu(s)
 
   menu:writeLargeText("Map", sx, sy*3)
   menu:writeText("File:", sx, sy*3+30)
-  maptext = menu:writeText(NetworkMapName, sx+50, sy*3+30)
+  local maptext = menu:writeText(NetworkMapName, sx+50, sy*3+30)
   menu:writeText("Players:", sx, sy*3+50)
-  players = menu:writeText(numplayers, sx+70, sy*3+50)
+  local players = menu:writeText(numplayers, sx+70, sy*3+50)
   menu:writeText("Description:", sx, sy*3+70)
-  descr = menu:writeText(description, sx+20, sy*3+90)
+  local descr = menu:writeText("", sx+20, sy*3+90)
 
   local fow = menu:addCheckBox("Fog of war", sx, sy*3+120, function() end)
   fow:setMarked(true)
@@ -158,20 +160,31 @@ function RunJoiningMapMenu(s)
 
   local OldPresentMap = PresentMap
   PresentMap = function(desc, nplayers, w, h, id)
-    numplayers = nplayers
-    players:setCaption(""..nplayers)
-    players:adjustSize()
     descr:setCaption(desc)
     descr:adjustSize()
     OldPresentMap(desc, nplayers, w, h, id)
+  end
+  local oldDefinePlayerTypes = DefinePlayerTypes
+  DefinePlayerTypes = function(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+    local ps = {p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16}
+    playerCount = 0
+
+    for _, s in pairs(ps) do
+      if s == "person" then
+        playerCount = playerCount + 1
+      end
+    end
+    players:setCaption(""..playerCount)
+    players:adjustSize()
+    oldDefinePlayerTypes(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
   end
 
   -- Security: The map name is checked by the stratagus engine.
   Load(NetworkMapName)
   local function readycb(dd)
-     LocalSetupState.Ready[NetLocalHostsSlot] = bool2int(dd:isMarked())
+    LocalSetupState.Ready[NetLocalHostsSlot] = bool2int(dd:isMarked())
   end
-  menu:addCheckBox("~!Ready", sx*11,  sy*14, readycb)
+  menu:addCheckBox("~!Ready", sx*11, sy*14, readycb)
 
   local updatePlayersList = addPlayersList(menu, numplayers)
 
@@ -200,6 +213,7 @@ function RunJoiningMapMenu(s)
         NetworkGamePrepareGameSettings()
         RunMap(NetworkMapName)
         PresentMap = OldPresentMap
+        DefinePlayerTypes = oldDefinePlayerTypes
         menu:stop()
       end
     elseif (state == 10) then -- ccs_unreachable
@@ -278,15 +292,29 @@ function RunJoinIpMenu()
   menu:setDrawMenusUnder(true)
 
   menu:addLabel("Enter server IP-address:", 144, 11)
-  local server = menu:addTextInputField("localhost", 40, 38, 212)
+  local server = menu:addTextInputField(wc2.preferences.ServerIP, 40, 38, 212)
 
   menu:addHalfButton("~!OK", "o", 24, 80,
     function(s)
-      -- FIXME: allow port ("localhost:1234")
-      if (NetworkSetupServerAddress(server:getText()) ~= 0) then
-        ErrorMenu("Invalid server name")
-        return
+      -- Allow port ("localhost:1234")
+      local sep = ":"
+      local f = string.find(server:getText(), sep)
+      if f then
+        local host = string.sub(server:getText(), 1, f - 1)
+        local port = string.sub(server:getText(), f + 1, string.len(server:getText()))
+        if (NetworkSetupServerAddress(host, port) ~= 0) then
+          ErrorMenu("Invalid server name")
+          return
+        end
+      else
+        if (NetworkSetupServerAddress(server:getText()) ~= 0) then
+          ErrorMenu("Invalid server name")
+          return
+        end
       end
+      wc2.preferences.ServerIP = server:getText()
+      SavePreferences()
+
       NetworkInitClientConnect()
       if (RunJoiningGameMenu() ~= 0) then
         -- connect failed, don't leave this menu
@@ -300,7 +328,7 @@ function RunJoinIpMenu()
   menu:run()
 end
 
-function RunServerMultiGameMenu(map, description, numplayers)
+local function RunServerMultiGameMenu(map, description, numplayers)
   local menu
   local sx = Video.Width / 20
   local sy = Video.Height / 20
@@ -311,11 +339,11 @@ function RunServerMultiGameMenu(map, description, numplayers)
 
   menu:writeLargeText("Map", sx, sy*3)
   menu:writeText("File:", sx, sy*3+30)
-  maptext = menu:writeText(map, sx+50, sy*3+30)
+  local maptext = menu:writeText(map, sx+50, sy*3+30)
   menu:writeText("Players:", sx, sy*3+50)
-  players = menu:writeText(numplayers, sx+70, sy*3+50)
+  local players = menu:writeText(numplayers, sx+70, sy*3+50)
   menu:writeText("Description:", sx, sy*3+70)
-  descr = menu:writeText("Unknown map", sx+20, sy*3+90)
+  local descr = menu:writeText("Unknown map", sx+20, sy*3+90)
 
   local function fowCb(dd)
     ServerSetupState.FogOfWar = bool2int(dd:isMarked())
@@ -332,7 +360,7 @@ function RunServerMultiGameMenu(map, description, numplayers)
   local revealmap = menu:addCheckBox("Reveal map", sx, sy*3+150, revealMapCb)
 
   menu:writeText("Race:", sx, sy*11)
-  d = menu:addDropDown({"Map Default", "Orc", "Human"}, sx + 100, sy*11,
+  local d = menu:addDropDown({"Map Default", "Orc", "Human"}, sx + 100, sy*11,
     function(dd)
       GameSettings.Presets[0].Race = dd:getSelected()
       ServerSetupState.Race[0] = GameSettings.Presets[0].Race
@@ -363,7 +391,7 @@ function RunServerMultiGameMenu(map, description, numplayers)
   NetworkMapName = map
   NetworkInitServerConnect(numplayers)
   ServerSetupState.FogOfWar = 1
-  startgame = menu:addFullButton("~!Start Game", "s", sx * 11,  sy*14,
+  local startgame = menu:addFullButton("~!Start Game", "s", sx * 11,  sy*14,
     function(s)
       SetFogOfWar(fow:isMarked())
       if revealmap:isMarked() == true then
@@ -384,6 +412,7 @@ function RunServerMultiGameMenu(map, description, numplayers)
 
   local listener = LuaActionListener(function(s) updateStartButton(updatePlayers()) end)
   menu:addLogicCallback(listener)
+  updateStartButton(updatePlayers())
 
   menu:addFullButton("~!Cancel", "c", Video.Width / 2 - 100, Video.Height - 100,
     function() InitGameSettings(); menu:stop() end)
@@ -396,30 +425,40 @@ function RunCreateMultiGameMenu(s)
   local map = "No Map"
   local description = "No map"
   local mapfile = "maps/multi/(2)mysterious-dragon-isle.smp.gz"
-  local numplayers = 3
+  local playerCount = 1
   local sx = Video.Width / 20
   local sy = Video.Height / 20
 
   menu = WarMenu("Create MultiPlayer game")
 
   menu:writeText("File:", sx, sy*3+30)
-  maptext = menu:writeText(mapfile, sx+50, sy*3+30)
+  local maptext = menu:writeText(mapfile, sx+50, sy*3+30)
   menu:writeText("Players:", sx, sy*3+50)
-  players = menu:writeText(numplayers, sx+70, sy*3+50)
+  local players = menu:writeText(playerCount, sx+70, sy*3+50)
   menu:writeText("Description:", sx, sy*3+70)
-  descr = menu:writeText(description, sx+20, sy*3+90)
+  local descr = menu:writeText(description, sx+20, sy*3+90)
 
   local OldPresentMap = PresentMap
   PresentMap = function(desc, nplayers, w, h, id)
-    numplayers = nplayers
-    players:setCaption(""..numplayers)
-    players:adjustSize()
     description = desc
     descr:setCaption(desc)
     descr:adjustSize()
     OldPresentMap(desc, nplayers, w, h, id)
   end
+  local oldDefinePlayerTypes = DefinePlayerTypes
+  DefinePlayerTypes = function(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+    local ps = {p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16}
+    playerCount = 0
 
+    for _, s in pairs(ps) do
+      if s == "person" then
+        playerCount = playerCount + 1
+      end
+    end
+    players:setCaption(""..playerCount)
+    players:adjustSize()
+    oldDefinePlayerTypes(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16)
+  end
   Load(mapfile)
   local browser = menu:addBrowser("maps/", "^.*%.smp%.?g?z?$", sx*10, sy*2+20, sx*8, sy*11)
   local function cb(s)
@@ -435,7 +474,7 @@ function RunCreateMultiGameMenu(s)
       if (browser:getSelected() < 0) then
         return
       end
-      RunServerMultiGameMenu(mapfile, description, numplayers)
+      RunServerMultiGameMenu(mapfile, description, playerCount)
       menu:stop()
     end
   )
@@ -445,6 +484,7 @@ function RunCreateMultiGameMenu(s)
 
   menu:run()
   PresentMap = OldPresentMap
+  DefinePlayerTypes = oldDefinePlayerTypes
 end
 
 function RunMultiPlayerGameMenu(s)
