@@ -85,7 +85,9 @@ set(warextract_SRCS
 
 # Additional platform checks
 
+if(NOT APPLE)
 find_package(PkgConfig QUIET REQUIRED)
+endif()
 
 # Check if platform is Maemo
 if(UNIX AND CMAKE_SYSTEM_NAME MATCHES Linux)
